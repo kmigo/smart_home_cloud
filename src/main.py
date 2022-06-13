@@ -47,7 +47,7 @@ async def update_backup(client:str,key:str):
     port = db[key]
     action = 1 if not db[key] else 0
     db[key] = True if action == 1 else False
-    manager.broadcast(json.dumps(db))
+    await manager.broadcast(json.dumps(db))
     return db
 
 
