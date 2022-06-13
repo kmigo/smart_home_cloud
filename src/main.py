@@ -40,7 +40,7 @@ def get_bakup():
 
 @app.put("/{client}/command/{key}")
 async def update_backup(client:str,key:str):
-    await manager.broadcast(json.dumps(db),client=client)
+    await manager.broadcast(json.dumps(key),client=client)
     return "ok"
 
 
