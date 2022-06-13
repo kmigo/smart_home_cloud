@@ -1,10 +1,23 @@
 import json
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI,WebSocket,WebSocketDisconnect,HTTPException
 from .services.websockets import ConnectionManager
 app = FastAPI()
 manager = ConnectionManager()
 db = {}
 gpio_ports ={}
+
+# cors
+origins = [
+    "*",
+]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 @app.get("/")
 def read_root():
     return {"Hello": "World"}
@@ -29,6 +42,7 @@ def get_bakup():
 def update_backup(key:str):
     global db
     if key not in db:
+        manager.broadcast(f'comand not found: {key}')
         raise HTTPException(status_code=400, detail="Bad request")
     port = db[key]
     action = 1 if not db[key] else 0
