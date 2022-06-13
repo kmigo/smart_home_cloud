@@ -40,15 +40,8 @@ def get_bakup():
 
 @app.put("/{client}/command/{key}")
 async def update_backup(client:str,key:str):
-    global db
-    if key not in db:
-        await manager.broadcast(f'comand not found: {key}'.encode(),client=client)
-        raise HTTPException(status_code=400, detail=f"Bad request {key}")
-    port = db[key]
-    action = 1 if not db[key] else 0
-    db[key] = True if action == 1 else False
     await manager.broadcast(json.dumps(db),client=client)
-    return db
+    return "ok"
 
 
 @app.websocket("/ws/{client_id}")
