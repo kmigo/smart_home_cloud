@@ -38,11 +38,11 @@ def get_bakup():
         raise HTTPException(status_code=400, detail="Bad request")
     return {'db':db,'gpio_ports':gpio_ports}
 
-@app.put("/command/{key}")
-def update_backup(key:str):
+@app.put("/{client}/command/{key}")
+async def update_backup(client:str,key:str):
     global db
     if key not in db:
-        manager.broadcast(f'comand not found: {key}'.encode())
+        await manager.broadcast(f'comand not found: {key}'.encode(),client)
         raise HTTPException(status_code=400, detail=f"Bad request {key}")
     port = db[key]
     action = 1 if not db[key] else 0
@@ -52,8 +52,8 @@ def update_backup(key:str):
 
 
 @app.websocket("/ws/{client_id}")
-async def websocket_endpoint(websocket: WebSocket, client_id: int):
-    await manager.connect(websocket)
+async def websocket_endpoint(websocket: WebSocket, client_id: str):
+    await manager.connect(websocket,client_id)
     try:
         while True:
             data = await websocket.receive_text()
