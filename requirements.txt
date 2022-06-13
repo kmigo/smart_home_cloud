@@ -1,0 +1,8 @@
+fastapi[all]
+pymysql
+SQLAlchemy
+pytest
+python-jose[cryptography]
+passlib[bcrypt]
+pysqlite3
+pyrebase4
