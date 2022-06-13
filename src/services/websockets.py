@@ -17,7 +17,7 @@ class ConnectionManager:
     async def send_personal_message(self, message: str, websocket: WebSocket):
         await websocket.send_text(message)
 
-    async def broadcast(self, message: str,client):
+    async def broadcast(self, message: str,client = None):
         for connection in self.active_connections:
             if client == 'raspberry'and connection == self._raspberry:
                 continue
