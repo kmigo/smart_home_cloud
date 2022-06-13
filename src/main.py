@@ -21,6 +21,8 @@ def make_backup(backup:dict):
 @app.get('/backup')
 def get_bakup():
     global db,gpio_ports
+    if db == {} or gpio_ports == {}:
+        raise HTTPException(status_code=400, detail="Bad request")
     return {'db':db,'gpio_ports':gpio_ports}
 
 @app.put("/command/{key}")
