@@ -42,8 +42,8 @@ def get_bakup():
 def update_backup(key:str):
     global db
     if key not in db:
-        manager.broadcast(f'comand not found: {key}')
-        raise HTTPException(status_code=400, detail="Bad request")
+        manager.broadcast(f'comand not found: {key}'.encode())
+        raise HTTPException(status_code=400, detail=f"Bad request {key}")
     port = db[key]
     action = 1 if not db[key] else 0
     db[key] = True if action == 1 else False
