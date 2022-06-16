@@ -1,57 +1,54 @@
-import json
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi import FastAPI,WebSocket,WebSocketDisconnect,HTTPException
-from .services.websockets import ConnectionManager
+import uuid
+from fastapi import FastAPI,WebSocket, WebSocketDisconnect
+from typing import List
 app = FastAPI()
+
+class ConnectionUser:
+    def __init__(self, client_id,id,websocket:WebSocket):
+        self.client_id = client_id
+        self.id = id
+        self.websocket : WebSocket= websocket
+    
+    def __eq__(self, __o: object) -> bool:
+        if isinstance(__o, ConnectionUser):
+            return self.id == __o.id
+        return False
+        
+class ConnectionManager:
+
+    def __init__(self):
+        self.active_connections: List[ConnectionUser] = []
+
+    async def connect(self, client: ConnectionUser):
+        await client.websocket.accept()
+        self.active_connections.append(client)
+
+    def disconnect(self, client: ConnectionUser):
+        self.active_connections.remove(client)
+
+    async def send_personal_message(self, message: str, client: ConnectionUser):
+        await client.websocket.send_text(message)
+
+    async def broadcast(self, message: str,senderClient: ConnectionUser):
+        for client in self.active_connections:
+            if client != senderClient:
+                await client.websocket.send_text(message)
+
 manager = ConnectionManager()
-db = {}
-gpio_ports ={}
 
-# cors
-origins = [
-    "*",
-]
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 @app.get("/")
-def read_root():
-    return {"Hello": "World"}
-
-@app.put("/backup",status_code=201)
-def make_backup(backup:dict):
-    global db,gpio_ports
-    if not ('db' in backup and 'gpio_ports' in backup):
-        raise HTTPException(status_code=400, detail="Bad request")
-    db = backup['db']
-    gpio_ports = backup['gpio_ports']
-    return "ok"
-
-@app.get('/backup')
-def get_bakup():
-    global db,gpio_ports
-    if db == {} or gpio_ports == {}:
-        raise HTTPException(status_code=400, detail="Bad request")
-    return {'db':db,'gpio_ports':gpio_ports}
-
-@app.put("/{client}/command/{key}")
-async def update_backup(client:str,key:str):
-    await manager.broadcast(key,client=client)
-    return "ok"
-
+async def root():
+    return "hello world 1"
 
 @app.websocket("/ws/{client_id}")
 async def websocket_endpoint(websocket: WebSocket, client_id: str):
-    await manager.connect(websocket,client_id)
+    client = ConnectionUser(client_id, str(uuid.uuid4()),websocket)
+    await manager.connect(client)
     try:
         while True:
             data = await websocket.receive_text()
-            await manager.send_personal_message(f"You wrote: {data}", websocket)
-            await manager.broadcast(f"Client #{client_id} says: {data}")
+            await manager.broadcast(f"Client #{client.id} says: {data}",client)
     except WebSocketDisconnect:
-        manager.disconnect(websocket)
-        await manager.broadcast(f"Client #{client_id} left the chat")
+
+        manager.disconnect(client)
+        await manager.broadcast(f"Client #{client.id} left the chat",client)
